@@ -1,0 +1,10 @@
+.DS_Store
+bin/
+obj/
+*.user
+*.rsuser
+*.suo
+*.userprefs
+.vs/
+.env
+appsettings.*.json
