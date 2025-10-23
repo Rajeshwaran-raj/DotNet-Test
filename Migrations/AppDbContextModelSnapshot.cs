@@ -20,7 +20,6 @@ namespace Dotnet8MySqlCrud.Migrations
                 .HasAnnotation("ProductVersion", "8.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
-            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
             modelBuilder.Entity("Dotnet8MySqlCrud.Models.Product", b =>
                 {

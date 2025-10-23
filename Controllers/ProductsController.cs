@@ -7,16 +7,23 @@ namespace Dotnet8MySqlCrud.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ProductsController(AppDbContext db) : ControllerBase
+public class ProductsController : ControllerBase
 {
+    private readonly AppDbContext _db;
+
+    public ProductsController(AppDbContext db)
+    {
+        _db = db;
+    }
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Product>>> GetAll()
-        => Ok(await db.Products.AsNoTracking().ToListAsync());
+        => Ok(await _db.Products.AsNoTracking().ToListAsync());
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Product>> GetById(int id)
     {
-        var item = await db.Products.FindAsync(id);
+        var item = await _db.Products.FindAsync(id);
         return item is null ? NotFound() : Ok(item);
     }
 
@@ -25,8 +32,8 @@ public class ProductsController(AppDbContext db) : ControllerBase
     {
         dto.Id = 0;
         dto.CreatedAt = DateTime.UtcNow;
-        db.Products.Add(dto);
-        await db.SaveChangesAsync();
+        _db.Products.Add(dto);
+        await _db.SaveChangesAsync();
         return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
     }
 
@@ -34,31 +41,31 @@ public class ProductsController(AppDbContext db) : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] Product dto)
     {
         if (id != dto.Id) return BadRequest("ID mismatch.");
-        var exists = await db.Products.AnyAsync(p => p.Id == id);
+        var exists = await _db.Products.AnyAsync(p => p.Id == id);
         if (!exists) return NotFound();
 
-        db.Entry(dto).State = EntityState.Modified;
-        await db.SaveChangesAsync();
+        _db.Entry(dto).State = EntityState.Modified;
+        await _db.SaveChangesAsync();
         return NoContent();
     }
 
     [HttpPatch("{id:int}/stock")]
     public async Task<IActionResult> UpdateStock(int id, [FromQuery] int value)
     {
-        var item = await db.Products.FindAsync(id);
+        var item = await _db.Products.FindAsync(id);
         if (item is null) return NotFound();
         item.Stock = value;
-        await db.SaveChangesAsync();
+        await _db.SaveChangesAsync();
         return Ok(item);
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var item = await db.Products.FindAsync(id);
+        var item = await _db.Products.FindAsync(id);
         if (item is null) return NotFound();
-        db.Products.Remove(item);
-        await db.SaveChangesAsync();
+        _db.Products.Remove(item);
+        await _db.SaveChangesAsync();
         return NoContent();
     }
 }
