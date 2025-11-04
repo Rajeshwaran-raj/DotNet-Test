@@ -1,14 +1,17 @@
 using Dotnet8MySqlCrud.Data;
 using Microsoft.EntityFrameworkCore;
+using dotenv.net;
+
+DotEnv.Load(); // Load .env file into environment variables
 
 var builder = WebApplication.CreateBuilder(args);
 
-// MySQL EF Core
-var conn = builder.Configuration.GetConnectionString("Default");
+// SQL Server EF Core
+var conn = Environment.GetEnvironmentVariable("MSSQL_CONN");
+
 builder.Services.AddDbContext<AppDbContext>(opt =>
 {
-    var serverVersion = ServerVersion.AutoDetect(conn);
-    opt.UseMySql(conn, serverVersion);
+    opt.UseSqlServer(conn);
 });
 
 builder.Services.AddEndpointsApiExplorer();
