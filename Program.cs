@@ -1,4 +1,4 @@
-using Dotnet8MySqlCrud.Data;
+﻿using Dotnet8MySqlCrud.Data;
 using Microsoft.EntityFrameworkCore;
 using dotenv.net;
 
@@ -24,6 +24,13 @@ builder.Services.AddCors(opt =>
 });
 
 var app = builder.Build();
+
+// ✅ Run EF Core migrations automatically on startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate(); // <-- This applies any pending migrations
+}
 
 app.UseSwagger();
 app.UseSwaggerUI();
