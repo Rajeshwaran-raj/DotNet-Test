@@ -1,7 +1,5 @@
-using Dotnet8MySqlCrud.Data;
+﻿using Microsoft.AspNetCore.Mvc;
 using Dotnet8MySqlCrud.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Dotnet8MySqlCrud.Controllers;
 
@@ -9,63 +7,79 @@ namespace Dotnet8MySqlCrud.Controllers;
 [Route("api/[controller]")]
 public class ProductsController : ControllerBase
 {
-    private readonly AppDbContext _db;
-
-    public ProductsController(AppDbContext db)
+    // 🔥 In-memory database (static so it persists while app runs)
+    private static readonly List<Product> _products = new()
     {
-        _db = db;
-    }
+        new Product { Id = 1, Name = "Laptop", Price = 55000, Stock = 10, CreatedAt = DateTime.UtcNow },
+        new Product { Id = 2, Name = "Mouse", Price = 500, Stock = 100, CreatedAt = DateTime.UtcNow },
+        new Product { Id = 3, Name = "Keyboard", Price = 1200, Stock = 50, CreatedAt = DateTime.UtcNow }
+    };
 
+    private static int _nextId = 4;
+
+    // GET: api/products
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Product>>> GetAll()
-        => Ok(await _db.Products.AsNoTracking().ToListAsync());
+    public ActionResult<IEnumerable<Product>> GetAll()
+        => Ok(_products);
 
+    // GET: api/products/{id}
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<Product>> GetById(int id)
+    public ActionResult<Product> GetById(int id)
     {
-        var item = await _db.Products.FindAsync(id);
+        var item = _products.FirstOrDefault(p => p.Id == id);
         return item is null ? NotFound() : Ok(item);
     }
 
+    // POST: api/products
     [HttpPost]
-    public async Task<ActionResult<Product>> Create([FromBody] Product dto)
+    public ActionResult<Product> Create([FromBody] Product dto)
     {
-        dto.Id = 0;
+        dto.Id = _nextId++;
         dto.CreatedAt = DateTime.UtcNow;
-        _db.Products.Add(dto);
-        await _db.SaveChangesAsync();
+        _products.Add(dto);
+
         return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
     }
 
+    // PUT: api/products/{id}
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] Product dto)
+    public IActionResult Update(int id, [FromBody] Product dto)
     {
-        if (id != dto.Id) return BadRequest("ID mismatch.");
-        var exists = await _db.Products.AnyAsync(p => p.Id == id);
-        if (!exists) return NotFound();
+        if (id != dto.Id)
+            return BadRequest("ID mismatch.");
 
-        _db.Entry(dto).State = EntityState.Modified;
-        await _db.SaveChangesAsync();
+        var item = _products.FirstOrDefault(p => p.Id == id);
+        if (item is null)
+            return NotFound();
+
+        item.Name = dto.Name;
+        item.Price = dto.Price;
+        item.Stock = dto.Stock;
+
         return NoContent();
     }
 
+    // PATCH: api/products/{id}/stock?value=10
     [HttpPatch("{id:int}/stock")]
-    public async Task<IActionResult> UpdateStock(int id, [FromQuery] int value)
+    public IActionResult UpdateStock(int id, [FromQuery] int value)
     {
-        var item = await _db.Products.FindAsync(id);
-        if (item is null) return NotFound();
+        var item = _products.FirstOrDefault(p => p.Id == id);
+        if (item is null)
+            return NotFound();
+
         item.Stock = value;
-        await _db.SaveChangesAsync();
         return Ok(item);
     }
 
+    // DELETE: api/products/{id}
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    public IActionResult Delete(int id)
     {
-        var item = await _db.Products.FindAsync(id);
-        if (item is null) return NotFound();
-        _db.Products.Remove(item);
-        await _db.SaveChangesAsync();
+        var item = _products.FirstOrDefault(p => p.Id == id);
+        if (item is null)
+            return NotFound();
+
+        _products.Remove(item);
         return NoContent();
     }
 }
